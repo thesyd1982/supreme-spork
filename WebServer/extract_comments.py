@@ -30,7 +30,7 @@ def get_HTML_comments(url, dict_word, json_path=None):
 
     except Exception as e:
         print("Erreur:" + str(e))
-    dict_final = {'countResults': y, 'commentsList': list_dict}
+    dict_final = {'URL':url,'countResults': y, 'commentsList': list_dict}
     if json_path:
         with open(json_path, 'w') as outfile:
             json.dump(dict_final, outfile)
