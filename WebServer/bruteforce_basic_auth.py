@@ -1,15 +1,14 @@
 """
 Script pour bruteforce une authentication basique HTTP
-TODO:
--Rajouter une barre de chargement
-
 """
-import requests, base64, time
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
+import base64
+import requests
+import time
 
-}
+from models.progressBar import ProgressBar
+
+headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
 
 
 def creds_is_valid(url, login, password):
@@ -23,18 +22,23 @@ def creds_is_valid(url, login, password):
 
 
 def bruteforce_basic_auth(url, user_wordlist, password_wordlist, tempo):
+    x = 0
     with open(user_wordlist, 'r') as userFile:
         user_list = [x.strip() for x in userFile.readlines()]
 
     with open(password_wordlist, 'r') as passFile:
         pass_list = [x.strip() for x in passFile.readlines()]
-
+    progBar = ProgressBar(len(user_list)*len(pass_list))
     for user in user_list:
         for password in pass_list:
+            x+=1
+            progBar.print_bar_progress(x)
             if creds_is_valid(url, user, password):
+                print('\r', end="")
                 return "{}:{}".format(user, password)
                 break
             time.sleep(tempo)
+            print('\r', end="")
     return "Not Found!"
 
 
@@ -43,4 +47,4 @@ if __name__ == "__main__":
     #login = "admin"
     #password = "admin"
     #print(creds_is_valid(url, login, password))
-    print(bruteforce_basic_auth(url,'/home/lab/Bureau/tmp/test_user.txt','/home/lab/Bureau/tmp/test_pass.txt',1))
+    print(bruteforce_basic_auth(url,'test_user.txt','test_pass.txt',1))
