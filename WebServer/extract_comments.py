@@ -35,7 +35,6 @@ def get_HTML_comments(url, dict_word, json_path=None):
         with open(json_path, 'w') as outfile:
             json.dump(dict_final, outfile)
         return json.dumps(dict_final)
-
     return result
 
 
