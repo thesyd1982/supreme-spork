@@ -3,9 +3,7 @@ Script qui explore un site web avec une wordlist
 """
 import requests
 import time
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
+from models.webRessource import headers_base as headers
 
 
 def test_wordlist(url, path_listWord, tempo=0.5):

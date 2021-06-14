@@ -11,9 +11,8 @@ import requests
 import pprint
 import json
 from models.colorText import ColorText
+from models.webRessource import headers_base as headers
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
 banner_p = '#' * 50 + "ID[{}]" + '#' * 50
 
 y = 0

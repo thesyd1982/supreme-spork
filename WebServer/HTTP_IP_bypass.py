@@ -3,11 +3,7 @@ Script pour faire une requete get ou post en spoofant une ip
 
 """
 import requests
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
-
-}
+from models.webRessource import headers_base as headers
 
 
 def spoof_ip_request(url, ip_spoofed,post_r=False, data={}):

