@@ -1,3 +1,6 @@
+"""
+Script qui explore un site web avec une wordlist
+"""
 import requests
 import time
 
