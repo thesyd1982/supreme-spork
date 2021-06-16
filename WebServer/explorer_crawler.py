@@ -1,5 +1,5 @@
 """
-Simple Scraper
+Simple Crawler
 TODO:
 -recuperer les dossier et les tester sans suffix
 """
@@ -11,6 +11,7 @@ from models.webRessource import headers_base as headers
 from bs4 import BeautifulSoup
 
 
+# Récuperer le domaine et le path de base
 def get_default_domain_and_path(url):
     prefix, domain = url.split('//')
     path = prefix + "//"
@@ -44,7 +45,6 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     while not q.empty():
         # Remettre par defaut les variables
         soup = None
-        all_link = []
 
         # récuperer la prochaine url
         url_now = q.get()
