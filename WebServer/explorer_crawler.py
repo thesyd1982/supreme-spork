@@ -9,6 +9,7 @@ from queue import Queue
 import time
 from models.webRessource import headers_base as headers
 from bs4 import BeautifulSoup
+import json
 
 
 # Récuperer le domaine et le path de base
@@ -24,7 +25,8 @@ def get_default_domain_and_path(url):
     return domain, path
 
 
-def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=[0.5, 1.5]):
+def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=[1, 2]):
+    time_start = time.time()
     # Initaliser la Queue
     q = Queue()
     # Ajouter l'URL de base
@@ -33,6 +35,7 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     result = []
     error = 0
     erreur_total = 0
+    nbr_requete = 0
 
     domain_base, path_base = get_default_domain_and_path(url_base)
 
@@ -52,6 +55,7 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
         # Essayer de recupérer le contenu de la page
         try:
             soup = BeautifulSoup(s.get(url_now, headers=headers).content, 'lxml')
+            nbr_requete += 1
             error = 0
         except:
             error += 1
@@ -75,17 +79,17 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
                         if x[:2] == "//":
                             x = x[1:]
                         if path_base + x not in result:
-                            # Ajouter au résultat final
+                            # Ajouter a la liste des résultats
                             result.append(path_base + x)
-                            # Ajouter pour les prochaines requete
+                            # Ajouter dans la queue
                             if y['attr'] == 'href':
                                 q.put(path_base + x)
 
                     elif domain_base in get_default_domain_and_path(x)[0]:
                         if x not in result:
-                            # Ajouter au résultat final
+                            # Ajouter a la liste des résultats
                             result.append(x)
-                            # Ajouter pour les prochaines requete
+                            # Ajouter dans la queue
                             if y['attr'] == 'href':
                                 q.put(x)
                 except:
@@ -94,13 +98,12 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
             # Affichage
             if verbose:
                 print('#' * 100)
-                print(url_now)
-                print('result length')
-                print(len(result))
-                print('queue lenght')
-                print(q.qsize())
-                print('error')
-                print(error)
+                print('URL en cours : {}'.format(url_now))
+                print('Nombre de requete : {}'.format(nbr_requete))
+                print('Nombre de résultat : {}'.format(len(result)))
+                print('Nombre de requetes restantes : {}'.format(q.qsize()))
+                print("Nombre d'erreur consecutives : {}".format(error))
+                print("Temps : {} s".format(round(time.time() - time_start, 2)))
             time.sleep(tempo)
             if error > error_limit:
                 print(" + ] Nombre d'erreur limite atteinte")
@@ -113,16 +116,14 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     result.sort()
 
     # Output file
+    dict_output = {'url_base': url_base, 'req_count': nbr_requete, 'res_count': len(result), 'err_count': erreur_total,
+                   'crawl_time': round(time.time() - time_start, 2), 'result': result}
     if path_output:
-        with open(path_output, 'w') as outputFile:
-            outputFile.write('URL BASE : ' + url_base + "\n")
-            outputFile.write('Nbr Résultat : ' + str(len(result)) + "\n")
-            outputFile.write('Erreur : ' + str(erreur_total) + "\n")
+        with open(path_output, 'w') as fp:
+            json.dump(dict_output, fp)
 
-            for x in result:
-                outputFile.write(x + '\n')
-    return result
+    return dict_output
 
 
 if __name__ == "__main__":
-    explore_website("http://www.miel-de-corse.fr/boutique/", "output.txt")
+    explore_website("https://lariviereauxroseaux.com/", "output.json",tempo=[0.2, 0.5])
