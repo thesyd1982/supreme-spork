@@ -2,6 +2,9 @@
 Simple Crawler
 TODO:
 -recuperer les dossier et les tester sans suffix
+-rajouter le status de la requete dans le result
+-mulithread ?
+-liste en entree
 """
 import random
 import requests
@@ -25,7 +28,7 @@ def get_default_domain_and_path(url):
     return domain, path
 
 
-def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=[1, 2]):
+def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=None):
     time_start = time.time()
     # Initaliser la Queue
     q = Queue()
@@ -33,16 +36,20 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     q.put(url_base)
 
     result = []
-    error = 0
-    erreur_total = 0
-    nbr_requete = 0
+    error, erreur_total, nbr_requete = 0, 0, 0
 
     domain_base, path_base = get_default_domain_and_path(url_base)
 
     s = requests.Session()
     s.headers.update(headers)
 
-    tempo = random.uniform(tempo[0], tempo[1])
+    if tempo:
+        print('[ * ] Tempo : {} s - {} s'.format(tempo[0], tempo[1]))
+        tempo = random.uniform(tempo[0], tempo[1])
+
+    else:
+        tempo = [1, 2]
+        print('[ * ] Default tempo {} s - {} s'.format(tempo[0], tempo[1]))
 
     # Tant que la liste d'url a crawler n'est pas vide
     while not q.empty():
@@ -126,4 +133,6 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
 
 
 if __name__ == "__main__":
-    explore_website("https://lariviereauxroseaux.com/", "output.json",tempo=[0.2, 0.5])
+    url = input("url: ")
+    domain_base, path_base = get_default_domain_and_path(url)
+    explore_website(url, "output"+domain_base.plit(".")[0]+".json", tempo=[0.2, 0.5])
