@@ -32,11 +32,10 @@ def bruteforce_basic_auth(url, user_wordlist, password_wordlist, tempo):
             x += 1
             progBar.print_bar_progress(x)
             if creds_is_valid(url, user, password):
-                print('\r', end="")
+                progBar.delete_bar_progress()
                 return "{}:{}".format(user, password)
-                break
             time.sleep(tempo)
-            print('\r', end="")
+            progBar.delete_bar_progress()
     return "Not Found!"
 
 
