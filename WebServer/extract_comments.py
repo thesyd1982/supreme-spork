@@ -4,6 +4,7 @@ TODO :
 -recuperer le js distant
 -recuperer les commentaire dans les balise style et dans le css distant
 -POO
+-Permettre de mettre une liste d'url en entree et du suprimer les doublons en sortie
 """
 
 from bs4 import BeautifulSoup, Comment
