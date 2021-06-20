@@ -10,10 +10,20 @@ import random
 import requests
 from queue import Queue
 import time
-from models.webRessource import headers_base as headers
+#from models.webRessource import headers_base as headers
 from bs4 import BeautifulSoup
 import json
 
+headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'}
+
+def print_timep(time_s):
+    if time_s >= 60 and time_s < 3600:
+        return "{} m {} s".format(int(time_s/60),int(time_s%60))
+    elif time_s >= 3600:
+        reste_s = int(time_s%3600)
+        return "{} h {} m {} s".format(int(time_s/3600),int(reste_s/60),int(reste_s%60))
+    else:
+        return "{} s".format(time_s)
 
 # Récuperer le domaine et le path de base
 def get_default_domain_and_path(url):
@@ -110,7 +120,8 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
                 print('Nombre de résultat : {}'.format(len(result)))
                 print('Nombre de requetes restantes : {}'.format(q.qsize()))
                 print("Nombre d'erreur consecutives : {}".format(error))
-                print("Temps : {} s".format(round(time.time() - time_start, 2)))
+                print("Nombre d'erreur total : {}".format(erreur_total))
+                print("Temps : {}".format(print_timep(int(time.time() - time_start))))
             time.sleep(tempo)
             if error > error_limit:
                 print(" + ] Nombre d'erreur limite atteinte")
@@ -135,4 +146,4 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
 if __name__ == "__main__":
     url = input("url: ")
     domain_base, path_base = get_default_domain_and_path(url)
-    explore_website(url, "output"+domain_base.plit(".")[0]+".json", tempo=[0.2, 0.5])
+    explore_website(url, "output"+domain_base.split(".")[0]+".json", tempo=[4, 6])
