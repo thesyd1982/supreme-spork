@@ -10,20 +10,11 @@ import random
 import requests
 from queue import Queue
 import time
-#from models.webRessource import headers_base as headers
+from models.webRessource import headers_base as headers
+from models.timePrint import print_timep
+from models.outputFile import save_json
 from bs4 import BeautifulSoup
-import json
 
-headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'}
-
-def print_timep(time_s):
-    if time_s >= 60 and time_s < 3600:
-        return "{} m {} s".format(int(time_s/60),int(time_s%60))
-    elif time_s >= 3600:
-        reste_s = int(time_s%3600)
-        return "{} h {} m {} s".format(int(time_s/3600),int(reste_s/60),int(reste_s%60))
-    else:
-        return "{} s".format(time_s)
 
 # Récuperer le domaine et le path de base
 def get_default_domain_and_path(url):
@@ -39,20 +30,21 @@ def get_default_domain_and_path(url):
 
 
 def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=None):
-    time_start = time.time()
     # Initaliser la Queue
     q = Queue()
     # Ajouter l'URL de base
     q.put(url_base)
-
     result = []
     error, erreur_total, nbr_requete = 0, 0, 0
 
+    # Récuperer le domaine de base et le chemin par defaut
     domain_base, path_base = get_default_domain_and_path(url_base)
 
+    # Init la session
     s = requests.Session()
     s.headers.update(headers)
 
+    # Init Tempo
     if tempo:
         print('[ * ] Tempo : {} s - {} s'.format(tempo[0], tempo[1]))
         tempo = random.uniform(tempo[0], tempo[1])
@@ -60,6 +52,9 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     else:
         tempo = [1, 2]
         print('[ * ] Default tempo {} s - {} s'.format(tempo[0], tempo[1]))
+
+    # Calcul du temps
+    time_start = time.time()
 
     # Tant que la liste d'url a crawler n'est pas vide
     while not q.empty():
@@ -83,15 +78,20 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
             # recuperer toutes les balise de liens
             all_link_soup_a = [{'attr': 'href', 'object': x} for x in soup.find_all('a')]
             all_link_soup_link = [{'attr': 'href', 'object': x} for x in soup.find_all('link')]
-            all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
+            #all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
             all_link_soup_img = [{'attr': 'src', 'object': x} for x in soup.find_all('img')]
             all_link_soup_script = [{'attr': 'src', 'object': x} for x in soup.find_all('script')]
-            all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_meta + all_link_soup_img + all_link_soup_script
+            all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script
 
             # Trier les liens recuperer
             for y in all_link_soup:
                 try:
                     x = y['object'][y['attr']]
+                    try:
+                        urlnow_domain = get_default_domain_and_path(x)[0]
+                    except:
+                        urlnow_domain = False
+
                     if x[:1] == "/":
                         if x[:2] == "//":
                             x = x[1:]
@@ -101,15 +101,23 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
                             # Ajouter dans la queue
                             if y['attr'] == 'href':
                                 q.put(path_base + x)
+                    elif urlnow_domain:
+                        if domain_base in urlnow_domain:
+                            if x not in result:
+                                # Ajouter a la liste des résultats
+                                result.append(x)
+                                # Ajouter dans la queue
+                                if y['attr'] == 'href':
+                                    q.put(x)
 
-                    elif domain_base in get_default_domain_and_path(x)[0]:
-                        if x not in result:
-                            # Ajouter a la liste des résultats
-                            result.append(x)
-                            # Ajouter dans la queue
+                    elif x[:4] != "http":
+                        uri = "/".join(url_now.split('/')[:-1]) + "/"
+                        urx = uri + x
+                        if urx not in result:
+                            result.append(urx)
                             if y['attr'] == 'href':
-                                q.put(x)
-                except:
+                                q.put(urx)
+                except Exception as e:
                     pass
 
             # Affichage
@@ -130,15 +138,19 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
     # Fermer la session
     s.close()
 
-    # Trier par ordre alphabetique
+    # Trier les résultats
     result.sort()
 
+    # Output Format
+    dict_output = {'url_base': url_base,
+                   'req_count': nbr_requete,
+                   'res_count': len(result),
+                   'err_count': erreur_total,
+                   'crawl_time': round(time.time() - time_start, 2),
+                   'result': result}
     # Output file
-    dict_output = {'url_base': url_base, 'req_count': nbr_requete, 'res_count': len(result), 'err_count': erreur_total,
-                   'crawl_time': round(time.time() - time_start, 2), 'result': result}
     if path_output:
-        with open(path_output, 'w') as fp:
-            json.dump(dict_output, fp)
+        save_json(path_output, dict_output)
 
     return dict_output
 
@@ -146,4 +158,4 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
 if __name__ == "__main__":
     url = input("url: ")
     domain_base, path_base = get_default_domain_and_path(url)
-    explore_website(url, "output"+domain_base.split(".")[0]+".json", tempo=[4, 6])
+    explore_website(url, "output" + domain_base.split(".")[0] + ".json", tempo=[0.2,0.4 ])
