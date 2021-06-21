@@ -11,22 +11,10 @@ import requests
 from queue import Queue
 import time
 from models.webRessource import headers_base as headers
+from models.webRessource import get_default_domain_and_path
 from models.timePrint import print_timep
 from models.outputFile import save_json
 from bs4 import BeautifulSoup
-
-
-# Récuperer le domaine et le path de base
-def get_default_domain_and_path(url):
-    prefix, domain = url.split('//')
-    path = prefix + "//"
-    if '/' in domain:
-        domain = domain.split('/')[0]
-    if "www." in domain:
-        domain = domain.replace('www.', '')
-        path += "www."
-    path += domain
-    return domain, path
 
 
 def explore_website(url_base, path_output=None, verbose=True, error_limit=10, tempo=None):
@@ -78,7 +66,7 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
             # recuperer toutes les balise de liens
             all_link_soup_a = [{'attr': 'href', 'object': x} for x in soup.find_all('a')]
             all_link_soup_link = [{'attr': 'href', 'object': x} for x in soup.find_all('link')]
-            #all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
+            # all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
             all_link_soup_img = [{'attr': 'src', 'object': x} for x in soup.find_all('img')]
             all_link_soup_script = [{'attr': 'src', 'object': x} for x in soup.find_all('script')]
             all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script
@@ -117,7 +105,7 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
                             result.append(urx)
                             if y['attr'] == 'href':
                                 q.put(urx)
-                except Exception as e:
+                except:
                     pass
 
             # Affichage
@@ -157,5 +145,5 @@ def explore_website(url_base, path_output=None, verbose=True, error_limit=10, te
 
 if __name__ == "__main__":
     url = input("url: ")
-    domain_base, path_base = get_default_domain_and_path(url)
-    explore_website(url, "output" + domain_base.split(".")[0] + ".json", tempo=[0.2,0.4 ])
+    domain, path_b = get_default_domain_and_path(url)
+    explore_website(url, "output" + domain.split(".")[0] + ".json", tempo=[0.2, 0.4])
