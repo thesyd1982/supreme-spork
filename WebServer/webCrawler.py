@@ -1,13 +1,24 @@
 """
 Simple Crawler
 TODO:
--recuperer les dossier et les tester sans suffix
--ne pas recuperer le contenu des media
+-ne pas recuperer le contenu des media, du js, du css, ect...
 -rajouter le status de la requete dans le result ?
 -mulithread ?
 -liste en entree
 -pouvoir interrompre avec ctrl+c
 -remplacer les liens commencant par # par liencourant + #
+-rajouter balise :
+embed['src']
+iframe['src']
+input['src']
+source['src']
+track['src']
+video['src']
+
+-ajouter des statistique (combien de resultat,url a faire en plus par url analyser)
+-ameliorer l'affichage et rajoueter une barrde progression sur : nombre de reqwuete faite / (nombre de requete faite + nombre de requeet a faire)
+
+
 """
 import random
 import requests
@@ -53,14 +64,17 @@ class WebCrawler:
         print('[ * ] Tempo : {} s - {} s'.format(tempo[0], tempo[1]))
 
     def print_verbose(self):
-        print('#' * 100)
-        print('URL en cours : {}'.format(self.url_now))
-        print('Nombre de requete : {}'.format(self.nbr_requete))
-        print('Nombre de résultat : {}'.format(len(self.result)))
-        print('Nombre de requetes restantes : {}'.format(self.q.qsize()))
-        print("Nombre d'erreur consecutives : {}".format(self.error))
-        print("Nombre d'erreur total : {}".format(self.erreur_total))
-        print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
+        if self.q.empty():
+            print('[ * ] Crawl Terminé')
+        else:
+            print('#' * 100)
+            print('URL en cours : {}'.format(self.url_now))
+            print('Nombre de requete : {}'.format(self.nbr_requete))
+            print('Nombre de résultat : {}'.format(len(self.result)))
+            print('Nombre de requetes restantes : {}'.format(self.q.qsize()))
+            print("Nombre d'erreur consecutives : {}".format(self.error))
+            print("Nombre d'erreur total : {}".format(self.erreur_total))
+            print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
 
     def explore_website(self):
         # Calcul du temps
@@ -102,6 +116,7 @@ class WebCrawler:
                             if x[:1] == "#":
                                 if self.url_now+x not in self.result:
                                     self.result.append(self.url_now+x)
+
                             # Exclure les attributs contenant du javascript
                             elif x[:11] != "javascript:":
                                 if x[:1] == "/":
