@@ -1,8 +1,7 @@
 """
 Simple Crawler
 TODO:
--ne pas recuperer le contenu des media, du js, du css, ect...
--rajouter le status de la requete dans le result ?
+-ne pas scrap le contenu des media, du js, du css, ect...
 -mulithread ?
 -liste en entree
 -pouvoir interrompre avec ctrl+c
@@ -23,7 +22,7 @@ import random
 import requests
 from queue import Queue
 import time
-from models.webRessource import headers_base as headers
+from models.webRessource import headers_crawler as headers
 from models.webRessource import URL
 from models.timePrint import print_timep
 from models.outputFile import save_json
@@ -39,6 +38,7 @@ class WebCrawler:
         self.error_limit = error_limit
         self.time_start = None
         self.url_now = None
+        self.r = None
         self.default_tempo = [1, 2]
 
         # Initaliser la Queue
@@ -48,6 +48,8 @@ class WebCrawler:
         self.q.put(url_base)
         self.result = []
         self.error, self.erreur_total, self.nbr_requete = 0, 0, 0
+        self.append_result_start = 0
+        self.append_req_start = 0
 
         # Récuperer le domaine de base et le chemin par defaut
         url_o = URL(url_base)
@@ -65,17 +67,32 @@ class WebCrawler:
         print('[ * ] Tempo : {} s - {} s'.format(tempo[0], tempo[1]))
 
     def print_verbose(self):
-        if self.q.empty():
-            print('[ * ] Crawl Terminé')
-        else:
-            print('#' * 100)
-            print('URL en cours : {}'.format(self.url_now))
-            print('Nombre de requete : {}'.format(self.nbr_requete))
-            print('Nombre de résultat : {}'.format(len(self.result)))
-            print('Nombre de requetes restantes : {}'.format(self.q.qsize()))
-            print("Nombre d'erreur consecutives : {}".format(self.error))
-            print("Nombre d'erreur total : {}".format(self.erreur_total))
-            print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
+        append_result = len(self.result) - self.append_result_start
+        if append_result < 0:
+            append_result = "+{}".format(append_result)
+        append_req = (self.q.qsize() - self.append_req_start)+1
+        if append_req < 0:
+            append_req = "+{}".format(append_req)
+        try:
+            requests_per_second = round(self.nbr_requete / int(time.time() - self.time_start),2)
+        except ZeroDivisionError:
+            requests_per_second = 0
+        try:
+            temps_restant_estime = int(self.q.qsize() / requests_per_second)
+        except ZeroDivisionError:
+            temps_restant_estime = 0
+
+        print('#' * 100)
+        print('URL Content Scraped : {}'.format(self.url_now))
+        print('Nombre de requete : {}'.format(self.nbr_requete))
+        print('Nombre de résultat : {} [{}]'.format(len(self.result), append_result))
+        print('Nombre de requetes restantes : {} [{}]'.format(self.q.qsize(), append_req))
+        print("Nombre d'erreur consecutives : {}".format(self.error))
+        print("Nombre d'erreur total : {}".format(self.erreur_total))
+        print("Nombre de requetes par seconde : {} r/s".format(requests_per_second))
+        print("Temps restant estimé : {}".format(print_timep(temps_restant_estime)))
+        print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
+
 
     def explore_website(self):
         # Calcul du temps
@@ -86,29 +103,42 @@ class WebCrawler:
             while not self.q.empty():
                 # Remettre par defaut les variables
                 soup = None
+                self.append_result_start = len(self.result)
+                self.append_req_start = self.q.qsize()
 
                 # récuperer la prochaine url
                 self.url_now = self.q.get()
 
                 # Essayer de recupérer le contenu de la page
                 try:
-                    soup = BeautifulSoup(self.s.get(self.url_now, headers=headers).content, 'lxml')
+                    self.r = self.s.get(self.url_now, headers=headers)
                     self.nbr_requete += 1
                     self.error = 0
+
+                    # Exclure les medias pour le scrap et les pages 404
+                    if 'text/html' in self.r.headers['Content-Type']:
+                        if self.r.status_code != 404:
+                            soup = BeautifulSoup(self.r.content, 'lxml')
+                        else:
+                            print("No scrap content because 404 page")
+                    else:
+                        print("No scrap content because content-type: " + self.r.headers['Content-Type'])
                 except requests.exceptions.RequestException:
                     self.error += 1
                     self.erreur_total += 1
 
-                # Si il y a un contenu
+                # if soup to scrap
                 if soup:
-                    # recuperer toutes les balise de liens
+
+                    # Récuperation de toutes les balise de liens
                     all_link_soup_a = [{'attr': 'href', 'object': x} for x in soup.find_all('a')]
                     all_link_soup_link = [{'attr': 'href', 'object': x} for x in soup.find_all('link')]
-                    # all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
                     all_link_soup_img = [{'attr': 'src', 'object': x} for x in soup.find_all('img')]
                     all_link_soup_script = [{'attr': 'src', 'object': x} for x in soup.find_all('script')]
                     all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script
+                    # all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
 
+                    # Traitement des liens récuperer
                     for y in all_link_soup:
                         try:
                             x = y['object'][y['attr']]
@@ -123,14 +153,14 @@ class WebCrawler:
                         except KeyError:
                             pass
 
-                    # Affichage
-                    if self.verbose:
-                        self.print_verbose()
+                # Affichage
+                if self.verbose:
+                    self.print_verbose()
 
-                    # Break si le nombre d'erreurs max est depasse
-                    if self.error > self.error_limit:
-                        print(" + ] Nombre d'erreur limite atteinte")
-                        break
+                # Break si le nombre d'erreurs max est depasse
+                if self.error > self.error_limit:
+                    print(" + ] Nombre d'erreur limite atteinte")
+                    break
 
                 # Tempo de la boucle
                 time.sleep(self.tempa)
@@ -155,6 +185,7 @@ class WebCrawler:
         if self.path_output:
             save_json(self.path_output, dict_output)
 
+        print('[ * ] Crawl Terminé')
         return dict_output
 
 

@@ -3,6 +3,10 @@ from urllib.parse import urlparse
 headers_base = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"}
 
+headers_crawler = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"}
+
 
 class URL:
     def __init__(self, url, referrer_url=None):
@@ -45,12 +49,16 @@ class URL:
             self.domain_pur = url.hostname
 
         # Verifier si il y a parent path et current path
-        self.current_path = "/".join((self.scheme + "://" + url.hostname + url.path).split('/')[:-1]) + "/"
         self.root_path = self.scheme + "://" + url.hostname + "/"
+        if self.scheme + "://" + url.hostname + url.path != self.root_path:
+            self.current_path = "/".join((self.scheme + "://" + url.hostname + url.path).split('/')[:-1]) + "/"
+        else:
+            self.current_path = self.root_path
         if url.path.count('/') > 0:
             self.parent_path = self.scheme + "://" + url.hostname + "/".join(url.path.split("/")[:-2]) + "/"
 
     def get_absolute(self):
+        self.url = self.url.replace('\\', '/')
         if self.url[:1] == "/":
             return self.root_path + self.url[1:]
         elif self.url[:2] == "./":
@@ -58,7 +66,10 @@ class URL:
         elif self.url[:3] == "../":
             return self.parent_path + self.url[3:]
         elif self.url[:1] == "#":
-            return self.referrer_url + self.url
+            if "#" in self.referrer_url:
+                return self.referrer_url
+            else:
+                return self.referrer_url + self.url
         else:
             return self.referrer_url + self.url
 
