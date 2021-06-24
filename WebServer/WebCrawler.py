@@ -6,7 +6,6 @@ TODO:
 -mulithread ?
 -liste en entree
 -pouvoir interrompre avec ctrl+c
--remplacer les liens commencant par # par liencourant + #
 -rajouter balise :
 embed['src']
 iframe['src']
@@ -15,7 +14,7 @@ source['src']
 track['src']
 video['src']
 
--ajouter des statistique (combien de resultat,url a faire en plus par url analyser)
+-ajouter des statistique (combien de resultat en + par url,url a faire en plus par url analyser)
 -ameliorer l'affichage et rajoueter une barrde progression sur : nombre de reqwuete faite / (nombre de requete faite + nombre de requeet a faire)
 
 
@@ -25,7 +24,7 @@ import requests
 from queue import Queue
 import time
 from models.webRessource import headers_base as headers
-from models.webRessource import get_default_domain_and_path
+from models.webRessource import URL
 from models.timePrint import print_timep
 from models.outputFile import save_json
 from bs4 import BeautifulSoup
@@ -51,7 +50,9 @@ class WebCrawler:
         self.error, self.erreur_total, self.nbr_requete = 0, 0, 0
 
         # Récuperer le domaine de base et le chemin par defaut
-        self.domain_base, self.path_base = get_default_domain_and_path(url_base)
+        url_o = URL(url_base)
+        self.domain_base = url_o.domain_pur
+        self.path_base = url_o.root_path
 
         # Init la session
         self.s = requests.Session()
@@ -108,49 +109,17 @@ class WebCrawler:
                     all_link_soup_script = [{'attr': 'src', 'object': x} for x in soup.find_all('script')]
                     all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script
 
-                    # Trier les liens recuperer
                     for y in all_link_soup:
                         try:
                             x = y['object'][y['attr']]
-                            # Tri des ancres
-                            if x[:1] == "#":
-                                if self.url_now+x not in self.result:
-                                    self.result.append(self.url_now+x)
-
-                            # Exclure les attributs contenant du javascript
-                            elif x[:11] != "javascript:":
-                                if x[:1] == "/":
-                                    if x[:2] == "//":
-                                        x = x[1:]
-                                    if self.path_base + x not in self.result:
-                                        # Ajouter a la liste des résultats
-                                        self.result.append(self.path_base + x)
-                                        # Ajouter dans la queue
-                                        if y['attr'] == 'href':
-                                            self.q.put(self.path_base + x)
-                                else:
-                                    try:
-                                        urlnow_domain = get_default_domain_and_path(x)[0]
-                                    except ValueError:
-                                        urlnow_domain = False
-
-                                    if urlnow_domain:
-
-                                        if self.domain_base in urlnow_domain:
-                                            if x not in self.result:
-                                                # Ajouter a la liste des résultats
-                                                self.result.append(x)
-                                                # Ajouter dans la queue
-                                                if y['attr'] == 'href':
-                                                    self.q.put(x)
-
-                                    elif x[:4] != "http":
-                                        uri = "/".join(self.url_now.split('/')[:-1]) + "/"
-                                        urx = uri + x
-                                        if urx not in self.result:
-                                            self.result.append(urx)
-                                            if y['attr'] == 'href':
-                                                self.q.put(urx)
+                            url_x = URL(x, self.url_now)
+                            if self.domain_base in url_x.domain_pur:
+                                if url_x.real_loc not in self.result:
+                                    self.result.append(url_x.real_loc)
+                                    if y['attr'] == 'href':
+                                        self.q.put(url_x.real_loc)
+                        except AttributeError:
+                            pass
                         except KeyError:
                             pass
 
@@ -191,6 +160,5 @@ class WebCrawler:
 
 if __name__ == "__main__":
     url = input("url: ")
-    domain, path_b = get_default_domain_and_path(url)
-    webcrwl = WebCrawler(url, "output" + domain.split(".")[0] + ".json", tempo=[0.2, 0.5])
+    webcrwl = WebCrawler(url, "output25.json", tempo=[0.2, 0.5])
     webcrwl.explore_website()
