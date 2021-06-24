@@ -145,9 +145,9 @@ class WebCrawler:
                                 if url_x.real_loc not in self.result:
                                     self.result.append(url_x.real_loc)
                                     if y['attr'] == 'href':
-                                        if not url_x.is_special:
-                                            if not url_x.is_anchor:
-                                                self.q.put(url_x.real_loc)
+                                        # Ne pas ajouter les urls speciales et les ancres au requeets suivante
+                                        if not url_x.is_special and not url_x.is_anchor:
+                                            self.q.put(url_x.real_loc)
                         except AttributeError:
                             pass
                         except KeyError:
