@@ -22,6 +22,8 @@ class URL:
         self.current_path = None
         self.parent_path = None
         self.root_path = None
+        self.is_special = False
+        self.is_anchor = False
 
         if self.absolute:
             self.set_info_url(self.url)
@@ -66,12 +68,19 @@ class URL:
         elif self.url[:3] == "../":
             return self.parent_path + self.url[3:]
         elif self.url[:1] == "#":
+            self.is_anchor = True
             if "#" in self.referrer_url:
                 return self.referrer_url
             else:
                 return self.referrer_url + self.url
+        elif self.url[:7] == "mailto:" or self.url[:4] == "tel:":
+            self.is_special = True
+            return self.url
         else:
-            return self.referrer_url + self.url
+            if self.referrer_url[-1:] == "/":
+                return self.referrer_url + self.url
+            else:
+                return self.referrer_url + "/" + self.url
 
 
 if __name__ == "__main__":

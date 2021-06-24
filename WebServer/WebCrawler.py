@@ -1,17 +1,11 @@
 """
 Simple Crawler
 TODO:
--ne pas scrap le contenu des media, du js, du css, ect...
 -mulithread ?
 -liste en entree
 -pouvoir interrompre avec ctrl+c
 -rajouter balise :
-embed['src']
-iframe['src']
-input['src']
-source['src']
-track['src']
-video['src']
+
 
 -ajouter des statistique (combien de resultat en + par url,url a faire en plus par url analyser)
 -ameliorer l'affichage et rajoueter une barrde progression sur : nombre de reqwuete faite / (nombre de requete faite + nombre de requeet a faire)
@@ -68,13 +62,13 @@ class WebCrawler:
 
     def print_verbose(self):
         append_result = len(self.result) - self.append_result_start
-        if append_result < 0:
+        if append_result > 0:
             append_result = "+{}".format(append_result)
-        append_req = (self.q.qsize() - self.append_req_start)+1
-        if append_req < 0:
+        append_req = (self.q.qsize() - self.append_req_start) + 1
+        if append_req > 0:
             append_req = "+{}".format(append_req)
         try:
-            requests_per_second = round(self.nbr_requete / int(time.time() - self.time_start),2)
+            requests_per_second = round(self.nbr_requete / int(time.time() - self.time_start), 2)
         except ZeroDivisionError:
             requests_per_second = 0
         try:
@@ -90,9 +84,8 @@ class WebCrawler:
         print("Nombre d'erreur consecutives : {}".format(self.error))
         print("Nombre d'erreur total : {}".format(self.erreur_total))
         print("Nombre de requetes par seconde : {} r/s".format(requests_per_second))
-        print("Temps restant estimé : {}".format(print_timep(temps_restant_estime)))
+        print("Temps restant minimum estimé : {}".format(print_timep(temps_restant_estime)))
         print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
-
 
     def explore_website(self):
         # Calcul du temps
@@ -135,8 +128,13 @@ class WebCrawler:
                     all_link_soup_link = [{'attr': 'href', 'object': x} for x in soup.find_all('link')]
                     all_link_soup_img = [{'attr': 'src', 'object': x} for x in soup.find_all('img')]
                     all_link_soup_script = [{'attr': 'src', 'object': x} for x in soup.find_all('script')]
-                    all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script
-                    # all_link_soup_meta = [{'attr': 'content', 'object': x} for x in soup.find_all('meta')]
+                    all_link_soup_embed = [{'attr': 'src', 'object': x} for x in soup.find_all('embed')]
+                    all_link_soup_iframe = [{'attr': 'src', 'object': x} for x in soup.find_all('iframe')]
+                    all_link_soup_input = [{'attr': 'src', 'object': x} for x in soup.find_all('input')]
+                    all_link_soup_source = [{'attr': 'src', 'object': x} for x in soup.find_all('source')]
+                    all_link_soup_track = [{'attr': 'src', 'object': x} for x in soup.find_all('track')]
+                    all_link_soup_video = [{'attr': 'src', 'object': x} for x in soup.find_all('video')]
+                    all_link_soup = all_link_soup_a + all_link_soup_link + all_link_soup_img + all_link_soup_script + all_link_soup_embed + all_link_soup_iframe + all_link_soup_input + all_link_soup_source + all_link_soup_track + all_link_soup_video
 
                     # Traitement des liens récuperer
                     for y in all_link_soup:
@@ -147,7 +145,9 @@ class WebCrawler:
                                 if url_x.real_loc not in self.result:
                                     self.result.append(url_x.real_loc)
                                     if y['attr'] == 'href':
-                                        self.q.put(url_x.real_loc)
+                                        if not url_x.is_special:
+                                            if not url_x.is_anchor:
+                                                self.q.put(url_x.real_loc)
                         except AttributeError:
                             pass
                         except KeyError:
