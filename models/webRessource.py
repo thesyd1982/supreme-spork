@@ -24,6 +24,7 @@ class URL:
         self.root_path = None
         self.is_special = False
         self.is_anchor = False
+        self.is_js = False
 
         if self.absolute:
             self.set_info_url(self.url)
@@ -76,11 +77,13 @@ class URL:
         elif self.url[:7] == "mailto:" or self.url[:4] == "tel:":
             self.is_special = True
             return self.url
+        elif self.url[:11] == "javascript:":
+            self.is_js = True
         else:
             if self.referrer_url[-1:] == "/":
                 return self.referrer_url + self.url
             else:
-                return self.referrer_url + "/" + self.url
+                return self.current_path + self.url
 
 
 if __name__ == "__main__":

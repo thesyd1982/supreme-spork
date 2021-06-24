@@ -4,13 +4,6 @@ TODO:
 -mulithread ?
 -liste en entree
 -pouvoir interrompre avec ctrl+c
--rajouter balise :
-
-
--ajouter des statistique (combien de resultat en + par url,url a faire en plus par url analyser)
--ameliorer l'affichage et rajoueter une barrde progression sur : nombre de reqwuete faite / (nombre de requete faite + nombre de requeet a faire)
-
-
 """
 import random
 import requests
@@ -77,15 +70,15 @@ class WebCrawler:
             temps_restant_estime = 0
 
         print('#' * 100)
-        print('URL Content Scraped : {}'.format(self.url_now))
-        print('Nombre de requete : {}'.format(self.nbr_requete))
-        print('Nombre de résultat : {} [{}]'.format(len(self.result), append_result))
-        print('Nombre de requetes restantes : {} [{}]'.format(self.q.qsize(), append_req))
-        print("Nombre d'erreur consecutives : {}".format(self.error))
-        print("Nombre d'erreur total : {}".format(self.erreur_total))
-        print("Nombre de requetes par seconde : {} r/s".format(requests_per_second))
-        print("Temps restant minimum estimé : {}".format(print_timep(temps_restant_estime)))
-        print("Temps : {}".format(print_timep(int(time.time() - self.time_start))))
+        print('URL: {}'.format(self.url_now))
+        print('Requests: {}'.format(self.nbr_requete))
+        print('Results: {} [{}]'.format(len(self.result), append_result))
+        print('To do: {} [{}]'.format(self.q.qsize(), append_req))
+        print("Consecutive error: {}".format(self.error))
+        print("Error: {}".format(self.erreur_total))
+        print("Speed: {} r/s".format(requests_per_second))
+        print("Minimum time: {}".format(print_timep(temps_restant_estime)))
+        print("Time elapsed : {}".format(print_timep(int(time.time() - self.time_start))))
 
     def explore_website(self):
         # Calcul du temps
@@ -140,14 +133,15 @@ class WebCrawler:
                     for y in all_link_soup:
                         try:
                             x = y['object'][y['attr']]
-                            url_x = URL(x, self.url_now)
-                            if self.domain_base in url_x.domain_pur:
-                                if url_x.real_loc not in self.result:
-                                    self.result.append(url_x.real_loc)
-                                    if y['attr'] == 'href':
-                                        # Ne pas ajouter les urls speciales et les ancres au requeets suivante
-                                        if not url_x.is_special and not url_x.is_anchor:
-                                            self.q.put(url_x.real_loc)
+                            if x != "":
+                                url_x = URL(x, self.url_now)
+                                if self.domain_base in url_x.domain_pur:
+                                    if url_x.real_loc not in self.result and not url_x.is_js:
+                                        self.result.append(url_x.real_loc)
+                                        if y['attr'] == 'href':
+                                            # Ne pas ajouter les urls speciales et les ancres au requetes suivante
+                                            if not url_x.is_special and not url_x.is_anchor:
+                                                self.q.put(url_x.real_loc)
                         except AttributeError:
                             pass
                         except KeyError:
@@ -191,5 +185,5 @@ class WebCrawler:
 
 if __name__ == "__main__":
     url = input("url: ")
-    webcrwl = WebCrawler(url, "output25.json", tempo=[0.2, 0.5])
+    webcrwl = WebCrawler(url, "output25.json", tempo=[1, 2])
     webcrwl.explore_website()
