@@ -83,6 +83,7 @@ class WebCrawler:
     def explore_website(self):
         # Calcul du temps
         self.time_start = time.time()
+        self.result.append(self.url_base)
 
         # Tant que la liste d'url a crawler n'est pas vide
         try:
@@ -133,6 +134,8 @@ class WebCrawler:
                     for y in all_link_soup:
                         try:
                             x = y['object'][y['attr']]
+
+                            # Si l'attribut n'est pas vide
                             if x != "":
                                 url_x = URL(x, self.url_now)
                                 if self.domain_base in url_x.domain_pur:
@@ -185,5 +188,5 @@ class WebCrawler:
 
 if __name__ == "__main__":
     url = input("url: ")
-    webcrwl = WebCrawler(url, "output25.json", tempo=[1, 2])
+    webcrwl = WebCrawler(url, "output25.json", tempo=[0.25, 0.44])
     webcrwl.explore_website()

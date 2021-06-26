@@ -35,10 +35,15 @@ class URL:
             self.real_loc = self.get_absolute()
 
     def set_absolute(self):
-        if self.url[:2] != "//" and self.url[:7] != "http://" and self.url[:8] != "https://":
-            self.absolute = False
-        else:
+        if self.url[:2] == "//":
+            self.set_info_url(self.referrer_url)
+            self.url = self.scheme + self.url
             self.absolute = True
+        elif self.url[:7] == "http://" or self.url[:8] == "https://":
+            self.absolute = True
+
+        else:
+            self.absolute = False
 
     def set_info_url(self, url):
         url = urlparse(url)
