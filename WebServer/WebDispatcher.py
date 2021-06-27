@@ -1,3 +1,10 @@
+"""
+TODO:
+Tri par doublons en fonction des parametre
+reggles de tri : une nouvelle url pour un nouveau parametres
+-remplacer le parametre a tester par un mot clé
+"""
+
 from urllib.parse import urlparse
 
 
@@ -5,6 +12,7 @@ class WebDispatcher:
     def __init__(self, url):
         self.url = urlparse(url)
         self.query = self.url.query
+
 
     def get_params(self):
         list_params = []

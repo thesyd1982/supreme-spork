@@ -33,6 +33,9 @@ class URL:
         else:
             self.set_info_url(self.referrer_url)
             self.real_loc = self.get_absolute()
+            if not self.is_special:
+                self.set_info_url(self.real_loc)
+
 
     def set_absolute(self):
         if self.url[:2] == "//":
@@ -92,7 +95,7 @@ class URL:
 
 
 if __name__ == "__main__":
-    url1 = URL("#chemin/vers/monfichier.html", "http://www.exemple.com:80/chemin/vers/monfichier.html")
+    url1 = URL("chemin.html", "http://www.exemple.com:80/chemin/")
     print(url1.domain_pur)
     print(url1.current_path)
     print(url1.parent_path)
